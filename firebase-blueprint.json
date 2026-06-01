@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user and their linked payout account.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "User email" },
+        "fampayId": { "type": "string", "description": "Linked FamPay UPI ID or account number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "createdAt", "updatedAt"]
+    },
+    "Payout": {
+      "title": "Payout",
+      "description": "A financial transaction record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user" },
+        "amount": { "type": "number", "description": "Amount in INR" },
+        "status": { "type": "string", "enum": ["pending", "completed", "failed"] },
+        "targetAccount": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and account settings."
+    },
+    "/users/{userId}/payouts/{payoutId}": {
+      "schema": "Payout",
+      "description": "History of payouts for a specific user."
+    }
+  }
+}

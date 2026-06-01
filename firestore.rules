@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity Validations
+    function isValidUser(data) {
+      return data.uid == request.auth.uid 
+        && data.email is string && data.email.size() <= 256
+        && (data.fampayId == null || (data.fampayId is string && data.fampayId.size() <= 100))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPayout(data) {
+      return data.userId == request.auth.uid
+        && data.amount is number && data.amount > 0
+        && data.status in ['pending', 'completed', 'failed']
+        && data.createdAt is timestamp;
+    }
+
+    // User Collection Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && isValidUser(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidUser(incoming())
+        && incoming().updatedAt == request.time
+        && incoming().createdAt == existing().createdAt
+        && incoming().uid == existing().uid
+        && incoming().diff(existing()).affectedKeys().hasOnly(['fampayId', 'updatedAt']);
+      
+      // Payouts subcollection
+      match /payouts/{payoutId} {
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidPayout(incoming())
+          && incoming().createdAt == request.time;
+        // Payouts are immutable in this flow
+        allow update, delete: if false;
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "VentureMind AI",
+  "description": "An AI-powered business incubator and finance dashboard to help you launch legal ventures and manage your earnings.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
